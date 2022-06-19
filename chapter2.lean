@@ -1,45 +1,61 @@
 import tactic.interactive -- Imports e.g. the use tactic
 namespace mynat
 
-
 -- Some set stuff
 -- TODO: move to another file
-variables T1 T2 : Type -- TODO: close the scope for t1 and t2?
-def injective {T1 T2} (f : T1 -> T2) : Prop := forall a b : T1, f a = f b -> a = b
-def surjective {T1 T2} (f : T1 -> T2) : Prop := forall b : T2, exists a : T1, f a = b
-def bijective {T1 T2} (f : T1 -> T2) : Prop := and (injective f) (surjective f)
-/- def subset t1 t2 := -/ 
-/- def proper_subset t1 t2 := -/
+section set_stuff
+  variables T1 T2 : Type -- TODO: close the scope for t1 and t2?
+  def injective {T1 T2} (f : T1 -> T2) : Prop := forall a b : T1, f a = f b -> a = b
+  def surjective {T1 T2} (f : T1 -> T2) : Prop := forall b : T2, exists a : T1, f a = b
+  def bijective {T1 T2} (f : T1 -> T2) : Prop := and (injective f) (surjective f)
+  /- def subset t1 t2 := -/ 
+  /- def proper_subset t1 t2 := -/
+end set_stuff
 
 -- Some logic stuff
-variable T : Type
-variable p : T -> Prop
-def not_exists_simp : (not (exists x, p x)) <-> (forall x, not (p x)) := 
+section logic_stuff
+/- open classical -/
+  variable T : Type
+  variable p : T -> Prop
+
+  def not_exists_simp : not (exists t, p t) <-> forall t, not (p t) := 
   begin
     split,
+      intro h,
+      intro t,
+      intro h_pt,
+      exact h (exists.intro t h_pt),
+  
+      intro h,
+      intro h_pt,
+      exact (exists.elim h_pt) h,
   end
-def not_forall_simp : (not (forall x, p x)) <-> (exists x, not (p x)) := sorry
 
--- TODO: use something other than axiom here?
+  -- TODO
+  /- def not_forall_simp : (not (forall t, p t)) <-> (exists t, not (p t)) := sorry -/ 
+end logic_stuff
+
+--------------------------------------------------------------------------------
+
 
 -- Axiom 2.1
-axiom mynat : Type
+axiom mynat : Type -- TODO: use something other than axiom here?
 axiom zero : mynat
 
 -- Axiom 2.2
 axiom succ : mynat -> mynat
-axiom succ_neq_0 {a : mynat} : not (succ a = zero)
-axiom succ_sur {a : mynat} : not (a = zero) -> exists b : mynat, succ b = a -- succ is surjective onto mynat - zero, hence we can't just write succ_sur = surjective succ.
+axiom succ_neq_0 : forall a : mynat, not (succ a = zero)
+axiom succ_sur : forall a : mynat, not (a = zero) -> exists b : mynat, succ b = a -- succ is surjective onto mynat - zero, hence we can't just write succ_sur = surjective succ.
 axiom succ_inj : injective succ
 
-/- -- TODO: This is another approach -/
+
+-- TODO: This is another approach?
 /- def mynat_p := subtype (fun a : mynat, not (a = zero)) -- Positive naturals -/
 
 -- Axiom 2.3
 axiom induction {a : mynat} {p : mynat -> Prop} : p zero -> (p a -> p (succ a)) -> p a
 
 -- Definition 2.1
--- TODO: write this function
 def infinite (T : Type) : Prop :=
   exists f : T -> T,
   and
@@ -53,18 +69,9 @@ example : infinite mynat :=
       exact succ_inj,
 
       dunfold surjective, -- dunfolds unfolds definitions :)
-      
+      intro h,
+      exact exists.elim (h zero) succ_neq_0,
   end
-
-
-/- variable T : Type -/
-/- variables a b : T -/
-/- def bleh : exists f : T -> T, f a = f b := -/
-/-   begin -/
-/-     use fun (x : T), b, -/
-/-   end -/
-
-
 
 
 
