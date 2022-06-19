@@ -1,0 +1,8 @@
+[package]
+name = "analysis zero"
+version = "0.1"
+lean_version = "leanprover-community/lean:3.43.0"
+path = "src"
+
+[dependencies]
+mathlib = {git = "https://github.com/leanprover-community/mathlib", rev = "7fb5ed20fa18d0ace1c4615658114d45235eb490"}
