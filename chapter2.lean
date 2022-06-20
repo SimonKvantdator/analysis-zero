@@ -1,13 +1,18 @@
 import tactic.interactive -- Imports e.g. the use tactic
+import data.set
 namespace mynat
 
 -- Some set stuff
 -- TODO: move to another file
 section set_stuff
-  variables T1 T2 : Type -- TODO: close the scope for t1 and t2?
+  variables T T1 T2 : Type -- TODO: close the scope for t1 and t2?
   def injective {T1 T2} (f : T1 -> T2) : Prop := forall a b : T1, f a = f b -> a = b
   def surjective {T1 T2} (f : T1 -> T2) : Prop := forall b : T2, exists a : T1, f a = b
   def bijective {T1 T2} (f : T1 -> T2) : Prop := and (injective f) (surjective f)
+
+  -- TODO: What is the most natural way to do this? With or without the set library?
+  /- def nonempty (T : Type) : Prop := exists (t : T), true -/
+  def nonempty {T} (A : set T) : Prop := exists (t : T), t ∈ A -- or has_mem.mem t A
   /- def subset t1 t2 := -/ 
   /- def proper_subset t1 t2 := -/
 end set_stuff
@@ -62,6 +67,7 @@ def infinite (T : Type) : Prop :=
     (injective f)
     (not (surjective f))
 
+-- Prove that the naturals are infinite
 example : infinite mynat :=
   begin
     use succ,
@@ -72,6 +78,39 @@ example : infinite mynat :=
       intro h,
       exact exists.elim (h zero) succ_neq_0,
   end
+
+-- Definition 2.3
+def final (A : set mynat) : Prop :=
+  and
+    (nonempty A)
+    (forall (t : mynat), (succ t) ∈ A -> t ∈ A)
+
+def initial (A : set mynat) : Prop :=
+  final (compl A)
+
+-- Proposition 12
+-- TODO: state slightly more general versions of union_of_final_sets and intersection_of_final_sets with arbitrary many final sets?
+section proposition_12
+  variables A B : set mynat
+  lemma union_of_final_sets : (final A) -> (final B) -> final (A ∪ B) :=
+    sorry
+
+  lemma intersection_of_initial_sets : (initial A) -> (initial B) -> initial (A ∩ B) :=
+    sorry
+
+  lemma initial_iff_2 : initial A <-> forall m : mynat,
+    or
+      (m ∈ A)
+      (not (succ m ∈ A)) :=
+    sorry
+
+  lemma initial_iff_3 : initial A <-> forall m : mynat, not (m ∈ A) -> succ m ∈ A :=
+    sorry
+
+  lemma initial_iff_4 : initial A <-> forall m : mynat, succ m ∈ A -> m ∈ A :=
+    sorry
+end proposition_12
+
 
 
 
