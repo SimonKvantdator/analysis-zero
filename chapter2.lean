@@ -70,8 +70,9 @@ axiom succ_inj : injective succ
 /- def mynat_p := subtype (fun a : mynat, not (a = zero)) -- Positive naturals -/
 
 -- Axiom 2.3 -- TODO: which definition is easiest to work with?
-/- axiom induction {p : mynat -> Prop} : p zero -> (forall a : mynat, p a -> p (succ a)) -> forall a : mynat, p a -/
-axiom induction {p : mynat -> Prop} {A : set mynat} : (zero ∈ A) -> (forall n : mynat, n ∈ A -> succ n ∈ A) -> A = set.univ
+/- axiom myinduction {p : mynat -> Prop} : p zero -> (forall a : mynat, p a -> p (succ a)) -> forall a : mynat, p a -/
+axiom myinduction {A : set mynat} : zero ∈ A -> (forall n : mynat, n ∈ A -> succ n ∈ A) -> A = set.univ
+-- named myinduction as not to nameclash with the builtin induction
 
 -- Definition 2.1
 def infinite (T : Type) : Prop :=
@@ -175,7 +176,7 @@ section proposition_12
             exact h_n2,
     end
 
-  -- Lean recognizes 
+  -- Lean recognizes a ∉ A is the same thing as a ∈ Aᶜ
   lemma initial_iff_3 (I : set mynat) (h0 : set.nonempty Iᶜ) : initial I <-> forall n : mynat, n ∉ I -> succ n ∉ I :=
     begin
       unfold initial,
@@ -213,11 +214,11 @@ section proposition_12
         have h_n2 : or (n ∈ I) (n ∈ Iᶜ),
           exact in_set_or_in_complement n,
         
-        cases h_n2 with h_n2a h_n2b,
-          exact h_n2a,
+        cases h_n2 with h_n2_l h_n2_r,
+          exact h_n2_l,
 
           exfalso,
-          exact (h_I2 n h_n2b) h_n1,
+          exact (h_I2 n h_n2_r) h_n1,
 
 
         intro h_I,
@@ -230,11 +231,11 @@ section proposition_12
           have h_n2 : or (succ n ∈ I) (succ n ∈ Iᶜ),
             exact in_set_or_in_complement (succ n),
 
-          cases h_n2 with h_n2a h_n2b,
+          cases h_n2 with h_n2_l h_n2_r,
             exfalso,
-            exact h_n ((h_I n) h_n2a),
+            exact h_n ((h_I n) h_n2_l),
 
-            exact h_n2b,
+            exact h_n2_r,
     end
 
   #check initial_iff_2
@@ -244,10 +245,59 @@ end proposition_12
 
 -- Proposition 13
 section proposition_13
-  lemma final_set_with_zero (F : set mynat) : zero ∈ F -> final F -> F = set.univ :=
+  variables F I : set mynat
+
+  lemma final_with_zero : zero ∈ F -> final F -> F = set.univ :=
     begin
-      sorry
+      unfold final,
+
+      intro h_F1,
+      intro h_F2,
+      cases h_F2 with h_F2_l h_F2_r, -- TODO: figure out how to throw out superfluous hypotheses, like h_F2_l?
+
+      exact myinduction h_F1 h_F2_r,
     end
+
+  lemma nonempty_initial : set.nonempty I -> initial I -> zero ∈ I :=
+    begin
+      unfold initial,
+      unfold final,
+
+      intro h_I1,
+      intro h_I2,
+      cases h_I2 with h_I2_l h_I2_r,
+
+      have h_zero : or (zero ∈ I) (zero ∈ Iᶜ),
+        exact in_set_or_in_complement zero,
+
+      cases h_zero with h_zero_l h_zero_r,
+        exact h_zero_l,
+
+        exfalso,
+        have h_I3 : Iᶜ = set.univ,
+          exact myinduction h_zero_r h_I2_r,
+        rw set.compl_univ_iff at h_I3,
+        exact h_I1.ne_empty h_I3,
+    end
+
+  lemma initial_without_zero : initial I -> zero ∉ I -> I = ∅ :=
+    begin
+      intro h_I1,
+      intro h_I2,
+
+      have h_I3 : or (I = ∅) I.nonempty,
+        exact set.eq_empty_or_nonempty I,
+
+      cases h_I3 with h_I3_l h_I3_r,
+        exact h_I3_l,
+
+        exfalso,
+        exact h_I2 (nonempty_initial_contains_zero I h_I3_r h_I1),
+    end
+  
+  #check final_with_zero
+  #check nonempty_initial
+  #check initial_without_zero
 end proposition_13
 
 -- Definition 2.4
@@ -278,7 +328,7 @@ section proposition_14
 end proposition_14
 
 #check in_set_or_in_complement
-#check induction
+#check myinduction
 
 
 
