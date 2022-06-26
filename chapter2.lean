@@ -3,8 +3,8 @@ import data.set
 namespace mynat
 
 -- Some set stuff
--- TODO: move to another file
-section set_stuff
+-- TODO: move to another file?
+section set_stuff -- {{{
   variables T T1 T2 : Type -- TODO: close the scope for t1 and t2?
   def injective {T1 T2} (f : T1 -> T2) : Prop := forall a b : T1, f a = f b -> a = b
   def surjective {T1 T2} (f : T1 -> T2) : Prop := forall b : T2, exists a : T1, f a = b
@@ -18,7 +18,7 @@ section set_stuff
   def Union {T} (A : set (set T)) : set T := {t : T | exists B ∈ A, t ∈ B} -- Union of collection of sets
   def Inter {T} (A : set (set T)) : set T := {t : T | forall B ∈ A, t ∈ B} -- Intersection of collection of sets
 
-  -- TODO: this can be done much conciser
+  -- TODO: this can be done much conciser?
   def in_set_or_in_complement {T} {A : set T} : forall a : T, or (a ∈ A) (a ∈ Aᶜ) :=
     begin
       intro a,
@@ -27,10 +27,10 @@ section set_stuff
       rw (set.mem_union a A Aᶜ) at h_n_,
       exact h_n_,
     end
-end set_stuff
+end set_stuff -- }}}
 
 -- Some logic stuff
-section logic_stuff
+section logic_stuff -- {{{
 /- open classical -/
   variable T : Type
   variable p : T -> Prop
@@ -50,12 +50,12 @@ section logic_stuff
 
   -- TODO
   /- def not_forall_simp : (not (forall t, p t)) <-> (exists t, not (p t)) := sorry -/ 
-end logic_stuff
+end logic_stuff -- }}}
 
 --------------------------------------------------------------------------------
 
-
--- Axiom 2.1
+-- Axioms for the naturals
+-- Axiom 2.1 {{{
 axiom mynat : Type -- TODO: use something other than axiom here?
 axiom zero : mynat
 
@@ -73,8 +73,10 @@ axiom succ_inj : injective succ
 /- axiom myinduction {p : mynat -> Prop} : p zero -> (forall a : mynat, p a -> p (succ a)) -> forall a : mynat, p a -/
 axiom myinduction {A : set mynat} : zero ∈ A -> (forall n : mynat, n ∈ A -> succ n ∈ A) -> A = set.univ
 -- named myinduction as not to nameclash with the builtin induction
+-- }}}
 
--- Definition 2.1
+-- Infinite sets
+-- Definition 2.1 {{{
 def infinite (T : Type) : Prop :=
   exists f : T -> T,
   and
@@ -92,8 +94,10 @@ example : infinite mynat :=
       intro h,
       exact exists.elim (h zero) succ_neq_0,
   end
+-- }}}
 
--- Definition 2.3
+-- Initial and Final subsets of the naturals
+-- Definition 2.3 {{{
 def final (A : set mynat) : Prop :=
   and
     (A.nonempty) -- mathlib docs: "The property s.nonempty expresses the fact that the set s is not empty. It should be used in theorem assumptions instead of ∃ x, x ∈ s or s ≠ ∅ as it gives access to a nice API thanks to the dot notation."
@@ -101,13 +105,14 @@ def final (A : set mynat) : Prop :=
 
 def initial (A : set mynat) : Prop :=
   final (compl A)
+-- }}}
 
 -- Proposition 12
-section proposition_12
+section proposition_12 -- {{{
   variables A B I : set mynat
 
   -- TODO: state slightly more general versions of union_of_final_sets and intersection_of_initial_sets with arbitrary many sets?
-  lemma union_of_final_sets : final A -> final B -> final (A ∪ B) :=
+  lemma union_of_final_sets : final A -> final B -> final (A ∪ B) := -- {{{
 	begin
       dunfold final,
 
@@ -125,17 +130,17 @@ section proposition_12
           exact or.inl (h_A.right n h_n),
 
           exact or.inr (h_B.right n h_n),
-	end
+	end -- }}}
 
-  lemma intersection_of_initial_sets : initial A -> initial B -> initial (A ∩ B) :=
+  lemma intersection_of_initial_sets : initial A -> initial B -> initial (A ∩ B) := -- {{{
     begin
       dunfold initial,
       rw set.compl_inter,
       exact union_of_final_sets (compl A) (compl B),
-    end
+    end -- }}}
 
   -- Modified from the book. Added requirement that I is proper subset of naturals.
-  lemma initial_iff_2 (I : set mynat) (h0 : set.nonempty Iᶜ) : initial I <-> forall n : mynat,
+  lemma initial_iff_2 (I : set mynat) (h0 : set.nonempty Iᶜ) : initial I <-> forall n : mynat, --{{{
     or
       (n ∈ I)
       (not (succ n ∈ I)) :=
@@ -174,10 +179,10 @@ section proposition_12
             exact h_n h_n1,
             
             exact h_n2,
-    end
+    end -- }}}
 
   -- Lean recognizes a ∉ A is the same thing as a ∈ Aᶜ
-  lemma initial_iff_3 (I : set mynat) (h0 : set.nonempty Iᶜ) : initial I <-> forall n : mynat, n ∉ I -> succ n ∉ I :=
+  lemma initial_iff_3 (I : set mynat) (h0 : set.nonempty Iᶜ) : initial I <-> forall n : mynat, n ∉ I -> succ n ∉ I := -- {{{
     begin
       unfold initial,
       unfold final,
@@ -198,9 +203,9 @@ section proposition_12
           intro h_n,
 
           exact h_I n h_n,
-    end
+    end -- }}}
 
-  lemma initial_iff_4 (I : set mynat) (h0 : set.nonempty Iᶜ) : initial I <-> forall n : mynat, succ n ∈ I -> n ∈ I :=
+  lemma initial_iff_4 (I : set mynat) (h0 : set.nonempty Iᶜ) : initial I <-> forall n : mynat, succ n ∈ I -> n ∈ I := -- {{{
     begin
       unfold initial,
       unfold final,
@@ -236,18 +241,18 @@ section proposition_12
             exact h_n ((h_I n) h_n2_l),
 
             exact h_n2_r,
-    end
+    end -- }}}
 
   #check initial_iff_2
   #check initial_iff_3
   #check initial_iff_4
-end proposition_12
+end proposition_12 -- }}}
 
 -- Proposition 13
-section proposition_13
+section proposition_13 -- {{{
   variables F I : set mynat
 
-  lemma final_with_zero : zero ∈ F -> final F -> F = set.univ :=
+  lemma final_with_zero : zero ∈ F -> final F -> F = set.univ := -- {{{
     begin
       unfold final,
 
@@ -256,9 +261,9 @@ section proposition_13
       cases h_F2 with h_F2_l h_F2_r, -- TODO: figure out how to throw out superfluous hypotheses, like h_F2_l?
 
       exact myinduction h_F1 h_F2_r,
-    end
+    end -- }}}
 
-  lemma nonempty_initial : set.nonempty I -> initial I -> zero ∈ I :=
+  lemma nonempty_initial : set.nonempty I -> initial I -> zero ∈ I := -- {{{
     begin
       unfold initial,
       unfold final,
@@ -278,9 +283,9 @@ section proposition_13
           exact myinduction h_zero_r h_I2_r,
         rw set.compl_univ_iff at h_I3,
         exact h_I1.ne_empty h_I3,
-    end
+    end -- }}}
 
-  lemma initial_without_zero : initial I -> zero ∉ I -> I = ∅ :=
+  lemma initial_without_zero : initial I -> zero ∉ I -> I = ∅ := -- {{{
     begin
       intro h_I1,
       intro h_I2,
@@ -293,40 +298,109 @@ section proposition_13
 
         exfalso,
         exact h_I2 (nonempty_initial_contains_zero I h_I3_r h_I1),
-    end
+    end -- }}}
   
   #check final_with_zero
   #check nonempty_initial
   #check initial_without_zero
-end proposition_13
+end proposition_13 -- }}}
 
--- Definition 2.4
-def plus (n : mynat) : set mynat := Inter {F | and (n ∈ F) (final F)}
-/- def plus (n : mynat) : set mynat := {n : mynat | forall (F : set mynat), final F -> n ∈ F} -- Maybe this definition, though less verbatim, is easier to work with? -/
-def minus (n : mynat) : set mynat := compl $ plus n
+-- The initial and final sets generated by a natural
+-- Definition 2.4 {{{
+def plus (n : mynat) : set mynat :=
+  Inter {F | and (n ∈ F) (final F)}
+def minus (n : mynat) : set mynat :=
+  compl $ plus n
+-- }}}
+
 
 -- Proposition 14
-section proposition_14
-  theorem plus_zero : plus zero = set.univ :=
+section proposition_14 -- {{{
+  theorem plus_zero : plus zero = set.univ := -- {{{
     begin
       unfold plus,
       unfold Inter,
-      
-      have h : forall (F : set mynat), (and (zero ∈ F) (final F)) -> (F = set.univ),
-        unfold final,
-        intro F,
-        intro h_F,
-  
-        let prop_ : mynat -> Prop := (∈ F),
-  
-        let blergh := induction {(∈ F)} (h_F.left),
-        
-  
-      /- rw set.mem_set_of, -/
-  
-    end
-end proposition_14
 
+      rw set.eq_univ_iff_forall,
+      intro n,
+      rw set.mem_set_of,
+      intro B,
+      rw set.mem_set_of,
+      intro h_B,
+      cases h_B with h_B_left h_B_right,
+
+      have h_B1 : B = set.univ,
+        exact final_with_zero B h_B_left h_B_right,
+      exact set.eq_univ_iff_forall.elim_left h_B1 n,
+    end -- }}}
+
+  theorem minus_zero : minus zero = ∅ := -- {{{
+    begin
+      unfold minus,
+      exact set.compl_empty_iff.elim_right plus_zero,
+    end -- }}}
+end proposition_14 -- }}}
+
+-- Proposition 15
+section proposition_15 -- {{{
+  variable n : mynat
+
+  theorem n_in_plus_n : n ∈ plus n := -- {{{
+  begin
+    unfold plus,
+    unfold Inter,
+
+    rw set.mem_set_of,
+    intro B,
+    rw set.mem_set_of,
+    cc,
+  end -- }}}
+
+  theorem n_notin_plus_n : n ∉ minus n :=
+    set.not_mem_compl_iff.elim_right (n_in_plus_n n)
+
+  theorem plus_final : final (plus n) := -- {{{
+    begin
+      unfold final,
+      split,
+        have h_n : n ∈ plus n,
+          unfold plus,
+          unfold Inter,
+          rw set.mem_set_of,
+          intro B,
+          rw set.mem_set_of,
+          cc,
+
+        exact set.nonempty_of_mem h_n,
+        intro m,
+        intro h_m,
+        unfold plus,
+        unfold plus at h_m,
+        unfold Inter,
+        unfold Inter at h_m,
+        rw set.mem_set_of,
+        rw set.mem_set_of at h_m,
+
+        intro B,
+        have h_m := h_m B,
+        rw set.mem_set_of,
+        rw set.mem_set_of at h_m,
+
+        intro h_B,
+        have h_m : m ∈ B := h_m h_B,
+        have h_B : final B := h_B.elim_right,
+        exact (h_B.right m) h_m,
+    end -- }}}
+
+  theorem plus_union_minus : (plus n) ∪ (minus n) = set.univ := -- {{{
+    begin
+      unfold minus,
+      exact set.union_compl_self (plus n),
+    end -- }}}
+end proposition_15 -- }}}
+
+#check set.mem_set_of
+#check set.sep_set_of
 #check in_set_or_in_complement
 #check myinduction
 
