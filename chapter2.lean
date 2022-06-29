@@ -15,8 +15,12 @@ section set_stuff -- {{{
   /- def nonempty {T} (A : set T) : Prop := exists (t : T), t ∈ A -- or has_mem.mem t A -/
   /- def subset t1 t2 := -/ 
   /- def proper_subset t1 t2 := -/
-  def Union {T} (A : set (set T)) : set T := {t : T | exists B ∈ A, t ∈ B} -- Union of collection of sets
-  def Inter {T} (A : set (set T)) : set T := {t : T | forall B ∈ A, t ∈ B} -- Intersection of collection of sets
+  def Union {T} (AA : set (set T)) : set T := {t : T | exists A ∈ AA, t ∈ A} -- Union of collection of sets
+  def Inter {T} (AA : set (set T)) : set T := {t : T | forall A ∈ AA, t ∈ A} -- Intersection of collection of sets
+
+  /- def inter_distributive {T} (p : set T -> Prop) := forall A B : set T, p A ∧ p B -> p (A ∩ B) -/
+  /- def Inter_distributive {T} (p : set T -> Prop) := forall AA : set (set T), (forall A ∈ AA, p A) -> p (Inter AA) -/
+  /- /1- lemma inductive_inter_distributive {T} (p : set T -> Prop) : inter_distributive p -> Inter_distributive p -1/ -- TODO: needs to be countable? -/
 
   -- TODO: this can be done much conciser?
   def in_set_or_in_complement {T} {A : set T} : forall a : T, or (a ∈ A) (a ∈ Aᶜ) :=
@@ -109,7 +113,7 @@ def initial (A : set mynat) : Prop :=
 
 -- Proposition 12
 section proposition_12 -- {{{
-  variables A B I : set mynat
+  variables A B: set mynat
 
   -- TODO: state slightly more general versions of union_of_final_sets and intersection_of_initial_sets with arbitrary many sets?
   lemma union_of_final_sets : final A -> final B -> final (A ∪ B) := -- {{{
@@ -181,7 +185,6 @@ section proposition_12 -- {{{
             exact h_n2,
     end -- }}}
 
-  -- Lean recognizes a ∉ A is the same thing as a ∈ Aᶜ
   lemma initial_iff_3 (I : set mynat) (h0 : set.nonempty Iᶜ) : initial I <-> forall n : mynat, n ∉ I -> succ n ∉ I := -- {{{
     begin
       unfold initial,
@@ -203,6 +206,7 @@ section proposition_12 -- {{{
           intro h_n,
 
           exact h_I n h_n,
+      -- Lean recognizes a ∉ A is the same thing as a ∈ Aᶜ
     end -- }}}
 
   lemma initial_iff_4 (I : set mynat) (h0 : set.nonempty Iᶜ) : initial I <-> forall n : mynat, succ n ∈ I -> n ∈ I := -- {{{
@@ -242,6 +246,30 @@ section proposition_12 -- {{{
 
             exact h_n2_r,
     end -- }}}
+
+    theorem succ_final (F : set mynat) (h0 : final F) : final (succ '' F) := -- {{{
+      begin
+        unfold final,
+        unfold final at h0,
+        split,
+          exact set.nonempty.image succ h0.elim_left,
+
+          have h0 : ∀ (n : mynat), n ∈ F -> succ n ∈ F := h0.elim_right,
+
+          intro n,
+          intro h_n,
+
+          unfold set.image,
+          unfold set.image at h_n,
+
+          rw set.mem_set_of,
+          rw set.mem_set_of at h_n,
+
+          cases h_n with l h_n,
+          use succ l,
+          have apply_succ : forall (a b : mynat), a = b -> succ a = succ b, cc, -- TODO: there must be some standard way to do this.
+          exact and.intro (h0 l h_n.elim_left) (apply_succ (succ l) n h_n.elim_right),
+      end -- }}}
 
   #check initial_iff_2
   #check initial_iff_3
@@ -297,7 +325,7 @@ section proposition_13 -- {{{
         exact h_I3_l,
 
         exfalso,
-        exact h_I2 (nonempty_initial_contains_zero I h_I3_r h_I1),
+        exact h_I2 (nonempty_initial I h_I3_r h_I1),
     end -- }}}
   
   #check final_with_zero
@@ -311,8 +339,28 @@ def plus (n : mynat) : set mynat :=
   Inter {F | and (n ∈ F) (final F)}
 def minus (n : mynat) : set mynat :=
   compl $ plus n
--- }}}
 
+-- Used in proposition 16
+lemma plus_subset_final : forall (F : set mynat) (n ∈ F), final F -> plus n ⊆ F := -- {{{
+  begin
+    intro F,
+    intro n,
+    intro h_n,
+    intro h_F1,
+
+    unfold plus,
+    unfold Inter,
+    rw set.subset_def,
+
+    intro t,
+    rw set.mem_set_of,
+    intro h_F2,
+    let h_F2 := h_F2 F,
+    rw set.mem_set_of at h_F2,
+
+    exact h_F2 (and.intro h_n h_F1),
+  end -- }}}
+-- }}}
 
 -- Proposition 14
 section proposition_14 -- {{{
@@ -399,6 +447,143 @@ section proposition_15 -- {{{
     end -- }}}
 end proposition_15 -- }}}
 
+-- Proposition 16
+section proposition_16 -- {{{
+  variable n : mynat
+
+  lemma final_n_union_psn : final ({n} ∪ plus (succ n)) := -- {{{
+    begin
+      have h_psn : final (plus (succ n))
+        := plus_final (succ n),
+
+      unfold final,
+      split,
+        exact set.nonempty.inl (set.singleton_nonempty n),
+  
+        intro l,
+        intro h_l,
+        cases h_l,
+          have h_l : l = n
+            := set.mem_singleton_iff.elim_left h_l,
+          rw h_l,
+          have h_succ_n : succ n ∈ plus (succ n)
+            := (n_in_plus_n (succ n)),
+          exact set.mem_union_right {n} h_succ_n,
+  
+          exact set.mem_union_right {n} (h_psn.elim_right l h_l),
+    end -- }}}
+
+  theorem plus_succ : plus (succ n) = succ '' (plus n) := -- {{{
+    begin
+      let lhs := plus (succ n),
+      let rhs := succ '' (plus n),
+      have h_lhs : final lhs
+        := plus_final (succ n),
+
+      have h1 : lhs ⊆ rhs,/- {{{ -/
+        have h_spn : final rhs
+          := succ_final (plus n) (plus_final n),
+        have h_succ_n : succ n ∈ rhs
+          := set.mem_image_of_mem succ (n_in_plus_n n),
+        exact plus_subset_final rhs (succ n) h_succ_n h_spn,/- }}} -/
+
+      have h2 : rhs ⊆ lhs,/- {{{ -/
+        rw set.subset_def,
+        intro m,
+        intro h_m,
+
+        have h_r : ∃ (x : mynat), x ∈ plus n ∧ succ x = m
+          := (set.mem_image succ (plus n) m).elim_left h_m,
+        cases h_r with r h_r,
+        cases h_r with h_r_left h_r_right,
+
+        let F1 := lhs ∪ {n},
+        have h_F1 : final (lhs ∪ {n}), -- TODO: Why can't I just write final F1 here?
+          rw set.union_comm lhs {n},
+          exact final_n_union_psn n,
+
+        have h_n : n ∈ F1
+          := set.mem_union_right lhs (set.mem_singleton n),
+
+        have h_pn : plus n ⊆ F1
+          := plus_subset_final F1 n h_n h_F1,
+        have h_r_left : r ∈ F1
+          := h_pn h_r_left,
+
+        have h_r : r ∈ lhs ∨ r = n
+          := (set.mem_union r lhs {n}).elim_left h_r_left,
+
+        cases h_r,
+          rw eq.symm h_r_right,
+          exact h_lhs.elim_right r h_r,
+
+          rw eq.symm h_r_right,
+          rw h_r,
+          exact n_in_plus_n (succ n),/- }}} -/
+          
+      exact set.eq_of_subset_of_subset h1 h2,
+    end -- }}}
+
+  theorem plus_n_as_union : plus n = {n} ∪ plus (succ n) :=
+    begin
+      let lhs := plus n,
+      let rhs := {n} ∪ plus (succ n),
+
+      have h1 : lhs ⊆ rhs,/- {{{ -/
+        begin
+          have h_n : n ∈ rhs,
+            simp,
+
+          have h_rhs : final rhs,
+            exact final_n_union_psn n,
+
+          exact plus_subset_final rhs n h_n h_rhs,
+        end,/- }}} -/
+
+      have h2 : rhs ⊆ lhs,/- {{{ -/
+        begin
+          simp,
+          split,
+            exact n_in_plus_n n,
+
+            have h_lhs : forall m ∈ plus (succ n), exists r ∈ plus n, succ r = m, -- TODO: Why can't I just write r ∈ lhs and then unfold lhs?
+              simp,
+              intro m,
+              intro h_m,
+              rw (plus_succ n) at h_m,
+              unfold set.image at h_m,
+              simp at h_m,
+              exact h_m,
+
+            assume m ∈ plus (succ n),
+            have h_m := h_lhs m H, -- TODO: name H something useful
+            cases h_m with r h_m,
+            cases h_m with h_r h_rm,
+
+            have h_lhs_f : final lhs
+              := plus_final n,
+            have h_succ_r : succ r ∈ lhs
+              := h_lhs_f.elim_right r h_r,
+            rw h_rm at h_succ_r,
+            exact h_succ_r,
+        end,/- }}} -/
+
+      exact set.eq_of_subset_of_subset h1 h2,
+    end
+
+    theorem n_not_in_plus_n : n ∉ plus n :=
+      begin
+        sorry -- TODO
+      end
+
+end proposition_16 -- }}}
+
+#check exists.intro
+#check eq.symm
+#check set.mem_union_left
+#check n_in_plus_n
+#check plus_subset_final
+#check plus_final
 #check set.mem_set_of
 #check set.sep_set_of
 #check in_set_or_in_complement
