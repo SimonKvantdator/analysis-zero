@@ -524,7 +524,7 @@ section proposition_16 -- {{{
       exact set.eq_of_subset_of_subset h1 h2,
     end -- }}}
 
-  theorem plus_n_as_union : plus n = {n} ∪ plus (succ n) :=
+  theorem plus_n_as_union : plus n = {n} ∪ plus (succ n) :=/- {{{ -/
     begin
       let lhs := plus n,
       let rhs := {n} ∪ plus (succ n),
@@ -546,51 +546,84 @@ section proposition_16 -- {{{
           split,
             exact n_in_plus_n n,
 
-            have h_lhs : forall m ∈ plus (succ n), exists r ∈ plus n, succ r = m, -- TODO: Why can't I just write r ∈ lhs and then unfold lhs?
-              simp,
+            have h_final : forall (n_ : mynat) (F : set mynat), n_ ∈ F -> final F -> plus (succ n_) ⊆ F,
+              intro n_,
+              intro F,
+              intro h_n_,
+              intro h_F,
+              rw plus_succ,
               intro m,
-              intro h_m,
-              rw (plus_succ n) at h_m,
-              unfold set.image at h_m,
-              simp at h_m,
-              exact h_m,
 
-            assume m ∈ plus (succ n),
-            have h_m := h_lhs m H, -- TODO: name H something useful
-            cases h_m with r h_m,
-            cases h_m with h_r h_rm,
+              unfold set.image, simp,
+              intro r,
+              intros h_r1 h_r2,
+              have h_r1 : r ∈ F,
+                apply plus_subset_final F n_ h_n_ h_F,
+                exact h_r1,
 
-            have h_lhs_f : final lhs
-              := plus_final n,
-            have h_succ_r : succ r ∈ lhs
-              := h_lhs_f.elim_right r h_r,
-            rw h_rm at h_succ_r,
-            exact h_succ_r,
+              rw eq.symm h_r2,
+              exact h_F.elim_right r h_r1,
+
+            exact h_final n lhs (n_in_plus_n n) (plus_final n),
         end,/- }}} -/
 
       exact set.eq_of_subset_of_subset h1 h2,
-    end
+    end/- }}} -/
 
-    theorem n_not_in_plus_n : n ∉ plus n :=
+    lemma contrapositive {A B : Prop} : (A <-> B) -> (not A <-> not B) :=/- {{{ -/
       begin
-        sorry -- TODO
-      end
+        intro h_AB,
+        split,
+          intro h_nA,
+          intro h_B,
+          have h_A : A := h_AB.elim_right h_B,
+          exact h_nA h_A,
 
+          intro h_nB,
+          intro h_A,
+          have h_B : B := h_AB.elim_left h_A,
+          exact h_nB h_B,
+      end/- }}} -/
+
+    theorem n_not_in_plus_succ_n : n ∉ plus (succ n) :=/- {{{ -/
+      begin
+        let I := {a : mynat | a ∉ plus (succ a)},
+        have h_I : I = set.univ,
+          apply myinduction,
+
+          simp,
+          rw plus_succ zero,
+          unfold set.image, simp,
+          exact fun b, fun _, succ_neq_0 b,
+
+          simp,
+          intro n,
+          intro h_n,
+          rw plus_succ,
+          rw eq.symm (set.mem_compl_eq (succ '' plus (succ n)) (succ n)),
+          rw eq.symm (set.mem_compl_eq (plus (succ n)) n) at h_n,
+          have succ_inj_ : function.injective succ, sorry,
+          apply set.image_compl_subset succ_inj_,
+          exact (function.injective.mem_set_image succ_inj_).elim_right h_n,
+
+        /- simp only [I] at h_n, -- unfold I -/
+        have h_n : n ∈ I,
+          begin
+            rw h_I,
+            exact set.mem_univ n,
+          end,
+        simp at h_n,
+        exact h_n,
+      end/- }}} -/
+    
+  #check plus_succ
+  #check plus_n_as_union
+  #check n_notin_plus_n
 end proposition_16 -- }}}
 
-#check exists.intro
-#check eq.symm
-#check set.mem_union_left
-#check n_in_plus_n
-#check plus_subset_final
-#check plus_final
-#check set.mem_set_of
-#check set.sep_set_of
-#check in_set_or_in_complement
-#check myinduction
-
-
-
+#check function.injective.mem_set_image
+#check succ_inj
+#print injective
 
 
 /- -- TODO: With my current definition, I have to prove that add is a function -/
