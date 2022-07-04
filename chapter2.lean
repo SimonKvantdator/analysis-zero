@@ -6,7 +6,8 @@ namespace mynat
 -- TODO: move to another file?
 section set_stuff -- {{{
   variables T T1 T2 : Type -- TODO: close the scope for t1 and t2?
-  def injective {T1 T2} (f : T1 -> T2) : Prop := forall a b : T1, f a = f b -> a = b
+  def injective {T1 T2} (f : T1 -> T2) : Prop := forall a b : T1, f a = f b -> a = b -- Can be used interchangably with function.injective from core.
+
   def surjective {T1 T2} (f : T1 -> T2) : Prop := forall b : T2, exists a : T1, f a = b
   def bijective {T1 T2} (f : T1 -> T2) : Prop := and (injective f) (surjective f)
 
@@ -144,7 +145,7 @@ section proposition_12 -- {{{
     end -- }}}
 
   -- Modified from the book. Added requirement that I is proper subset of naturals.
-  lemma initial_iff_2 (I : set mynat) (h0 : set.nonempty Iᶜ) : initial I <-> forall n : mynat, --{{{
+  lemma initial_iff_cond2 (I : set mynat) (h0 : set.nonempty Iᶜ) : initial I <-> forall n : mynat, --{{{
     or
       (n ∈ I)
       (not (succ n ∈ I)) :=
@@ -185,7 +186,7 @@ section proposition_12 -- {{{
             exact h_n2,
     end -- }}}
 
-  lemma initial_iff_3 (I : set mynat) (h0 : set.nonempty Iᶜ) : initial I <-> forall n : mynat, n ∉ I -> succ n ∉ I := -- {{{
+  lemma initial_iff_cond3 (I : set mynat) (h0 : set.nonempty Iᶜ) : initial I <-> forall n : mynat, n ∉ I -> succ n ∉ I := -- {{{
     begin
       unfold initial,
       unfold final,
@@ -209,7 +210,7 @@ section proposition_12 -- {{{
       -- Lean recognizes a ∉ A is the same thing as a ∈ Aᶜ
     end -- }}}
 
-  lemma initial_iff_4 (I : set mynat) (h0 : set.nonempty Iᶜ) : initial I <-> forall n : mynat, succ n ∈ I -> n ∈ I := -- {{{
+  lemma initial_iff_cond4 (I : set mynat) (h0 : set.nonempty Iᶜ) : initial I <-> forall n : mynat, succ n ∈ I -> n ∈ I := -- {{{
     begin
       unfold initial,
       unfold final,
@@ -271,9 +272,9 @@ section proposition_12 -- {{{
           exact and.intro (h0 l h_n.elim_left) (apply_succ (succ l) n h_n.elim_right),
       end -- }}}
 
-  #check initial_iff_2
-  #check initial_iff_3
-  #check initial_iff_4
+  #check initial_iff_cond2
+  #check initial_iff_cond3
+  #check initial_iff_cond4
 end proposition_12 -- }}}
 
 -- Proposition 13
@@ -602,9 +603,8 @@ section proposition_16 -- {{{
           rw plus_succ,
           rw eq.symm (set.mem_compl_eq (succ '' plus (succ n)) (succ n)),
           rw eq.symm (set.mem_compl_eq (plus (succ n)) n) at h_n,
-          have succ_inj_ : function.injective succ, sorry,
-          apply set.image_compl_subset succ_inj_,
-          exact (function.injective.mem_set_image succ_inj_).elim_right h_n,
+          apply set.image_compl_subset succ_inj,
+          exact (function.injective.mem_set_image succ_inj).elim_right h_n,
 
         /- simp only [I] at h_n, -- unfold I -/
         have h_n : n ∈ I,
@@ -621,6 +621,36 @@ section proposition_16 -- {{{
   #check n_notin_plus_n
 end proposition_16 -- }}}
 
+-- Corollary 17
+section corollary_17 -- {{{
+  variable n : mynat
+
+  theorem minus_succ_n_as_union : minus (succ n) = {n} ∪ (minus n) :=
+    begin
+      unfold minus,
+      have h1 := eq.symm (plus_n_as_union n),
+      apply_fun compl at h1,
+      rw set.compl_union _ _ at h1,
+      apply_fun (∪) {n} at h1,
+      rw set.union_distrib_left _ _ _ at h1,
+      rw set.union_compl_self _ at h1,
+      rw set.univ_inter at h1,
+
+      have h2 := n_not_in_plus_succ_n n,
+      rw eq.symm (set.mem_compl_eq _ _) at h2,
+      rw iff.symm set.singleton_subset_iff at h2,
+      rw set.union_eq_right_iff_subset.elim_right h2 at h1,
+      assumption,
+    end
+end corollary_17 -- }}}
+
+
+variable a : mynat
+
+#check (∪)
+#check (∩)
+#check compl
+#check funext
 #check function.injective.mem_set_image
 #check succ_inj
 #print injective
