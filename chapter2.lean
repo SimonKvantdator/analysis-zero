@@ -40,7 +40,7 @@ section logic_stuff -- {{{
   variable T : Type
   variable p : T -> Prop
 
-  def not_exists_simp : not (exists t, p t) <-> forall t, not (p t) := 
+  def not_exists_simp : not (exists t, p t) <-> forall t, not (p t) := /- {{{ -/
   begin
     split,
       intro h,
@@ -51,7 +51,22 @@ section logic_stuff -- {{{
       intro h,
       intro h_pt,
       exact (exists.elim h_pt) h,
-  end
+  end/- }}} -/
+
+    lemma contrapositive {A B : Prop} : (A <-> B) -> (not A <-> not B) :=/- {{{ -/
+      begin
+        intro h_AB,
+        split,
+          intro h_nA,
+          intro h_B,
+          have h_A : A := h_AB.elim_right h_B,
+          exact h_nA h_A,
+
+          intro h_nB,
+          intro h_A,
+          have h_B : B := h_AB.elim_left h_A,
+          exact h_nB h_B,
+      end/- }}} -/
 
   -- TODO
   /- def not_forall_simp : (not (forall t, p t)) <-> (exists t, not (p t)) := sorry -/ 
@@ -405,8 +420,8 @@ section proposition_15 -- {{{
     cc,
   end -- }}}
 
-  theorem n_notin_plus_n : n ∉ minus n :=
-    set.not_mem_compl_iff.elim_right (n_in_plus_n n)
+  theorem n_notin_plus_n : n ∉ minus n :=/- {{{ -/
+    set.not_mem_compl_iff.elim_right (n_in_plus_n n)/- }}} -/
 
   theorem plus_final : final (plus n) := -- {{{
     begin
@@ -571,21 +586,6 @@ section proposition_16 -- {{{
       exact set.eq_of_subset_of_subset h1 h2,
     end/- }}} -/
 
-    lemma contrapositive {A B : Prop} : (A <-> B) -> (not A <-> not B) :=/- {{{ -/
-      begin
-        intro h_AB,
-        split,
-          intro h_nA,
-          intro h_B,
-          have h_A : A := h_AB.elim_right h_B,
-          exact h_nA h_A,
-
-          intro h_nB,
-          intro h_A,
-          have h_B : B := h_AB.elim_left h_A,
-          exact h_nB h_B,
-      end/- }}} -/
-
     theorem n_not_in_plus_succ_n : n ∉ plus (succ n) :=/- {{{ -/
       begin
         let I := {a : mynat | a ∉ plus (succ a)},
@@ -644,9 +644,74 @@ section corollary_17 -- {{{
     end
 end corollary_17 -- }}}
 
+-- Proposition 18
+section proposition_18
+  variables m n : mynat
+
+  theorem final_subset_or_superset_of_plus_n {F : set mynat} : (final F) -> (F ⊆ plus n) ∨ (plus n ⊆ F) :=/- {{{ -/
+    begin
+      intro h_F,
+      let A := {p : mynat | F ⊆ plus p ∨ plus p ⊆ F },
+      have h_A : A = set.univ,
+        apply myinduction,
+
+        simp,
+        rw plus_zero,
+        simp,
+
+        intro p,
+        intro h_p,
+        cases h_p with h_p1 h_p2,
+          simp,
+          rw plus_n_as_union p at h_p1,
+          cases @in_set_or_in_complement mynat F p with h_p3 h_p4,
+            right, -- From here, we see that F = plus p, so we can start expanding definitions
+            unfold plus,
+            unfold Inter,
+            intro t, simp,
+            intro h_t,
+            have h_p5 : succ p ∈ F := h_F.elim_right p h_p3,
+            exact h_t F h_p5 h_F,
+
+            left,
+            rw iff.symm set.singleton_subset_iff at h_p4,
+            rw set.subset_compl_comm at h_p4,
+            have h_p5 := set.inter_subset_inter h_p1 h_p4,
+            rw set.inter_distrib_right at h_p5,
+            simp at h_p5,
+            exact h_p5.left,
+
+          simp,
+          right,
+          rw plus_n_as_union at h_p2,
+          rw set.union_subset_iff at h_p2,
+          exact h_p2.right,
+
+          have h_n : n ∈ A,
+            begin
+              rw h_A,
+              exact set.mem_univ n,
+            end,
+          simp at h_n,
+          exact h_n,
+    end/- }}} -/
+
+  theorem initial_subset_or_superset_of_minus_n {I : set mynat} : (initial I) -> (I ⊆ minus n) ∨ (minus n ⊆ I) :=/- {{{ -/
+    begin
+      sorry,
+    end/- }}} -/
+
+  theorem plus_n_subset_or_superset_of_plus_m  : (plus n ⊆ plus m) ∨ (plus m ⊆ plus n) :=/- {{{ -/
+    begin
+      sorry,
+    end
+end proposition_18/- }}} -/
+
 
 variable a : mynat
 
+#check in_set_or_in_complement
+#check plus_zero
 #check (∪)
 #check (∩)
 #check compl
