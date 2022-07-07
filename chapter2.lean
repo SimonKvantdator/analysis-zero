@@ -409,7 +409,7 @@ end proposition_14 -- }}}
 section proposition_15 -- {{{
   variable n : mynat
 
-  theorem n_in_plus_n : n ∈ plus n := -- {{{
+  theorem n_in_plus_n {n} : n ∈ plus n := -- {{{
   begin
     unfold plus,
     unfold Inter,
@@ -420,10 +420,10 @@ section proposition_15 -- {{{
     cc,
   end -- }}}
 
-  theorem n_notin_plus_n : n ∉ minus n :=/- {{{ -/
-    set.not_mem_compl_iff.elim_right (n_in_plus_n n)/- }}} -/
+  theorem n_notin_plus_n {n} : n ∉ minus n :=/- {{{ -/
+    set.not_mem_compl_iff.elim_right n_in_plus_n/- }}} -/
 
-  theorem plus_final : final (plus n) := -- {{{
+  theorem plus_final {n} : final (plus n) := -- {{{
     begin
       unfold final,
       split,
@@ -456,7 +456,7 @@ section proposition_15 -- {{{
         exact (h_B.right m) h_m,
     end -- }}}
 
-  theorem plus_union_minus : (plus n) ∪ (minus n) = set.univ := -- {{{
+  theorem plus_union_minus {n} : (plus n) ∪ (minus n) = set.univ := -- {{{
     begin
       unfold minus,
       exact set.union_compl_self (plus n),
@@ -467,10 +467,10 @@ end proposition_15 -- }}}
 section proposition_16 -- {{{
   variable n : mynat
 
-  lemma final_n_union_psn : final ({n} ∪ plus (succ n)) := -- {{{
+  lemma final_n_union_psn {n} : final ({n} ∪ plus (succ n)) := -- {{{
     begin
       have h_psn : final (plus (succ n))
-        := plus_final (succ n),
+        := plus_final,
 
       unfold final,
       split,
@@ -483,18 +483,18 @@ section proposition_16 -- {{{
             := set.mem_singleton_iff.elim_left h_l,
           rw h_l,
           have h_succ_n : succ n ∈ plus (succ n)
-            := (n_in_plus_n (succ n)),
+            := n_in_plus_n,
           exact set.mem_union_right {n} h_succ_n,
   
           exact set.mem_union_right {n} (h_psn.elim_right l h_l),
     end -- }}}
 
-  theorem plus_succ : plus (succ n) = succ '' (plus n) := -- {{{
+  theorem plus_succ {n} : plus (succ n) = succ '' (plus n) := -- {{{
     begin
       let lhs := plus (succ n),
       let rhs := succ '' (plus n),
       have h_lhs : final lhs
-        := plus_final (succ n),
+        := plus_final,
 
       have h1 : lhs ⊆ rhs,/- {{{ -/
         have h_spn : final rhs
@@ -540,7 +540,7 @@ section proposition_16 -- {{{
       exact set.eq_of_subset_of_subset h1 h2,
     end -- }}}
 
-  theorem plus_n_as_union : plus n = {n} ∪ plus (succ n) :=/- {{{ -/
+  theorem plus_n_as_union {n} : plus n = {n} ∪ plus (succ n) :=/- {{{ -/
     begin
       let lhs := plus n,
       let rhs := {n} ∪ plus (succ n),
@@ -551,7 +551,7 @@ section proposition_16 -- {{{
             simp,
 
           have h_rhs : final rhs,
-            exact final_n_union_psn n,
+            exact final_n_union_psn,
 
           exact plus_subset_final rhs n h_n h_rhs,
         end,/- }}} -/
@@ -560,7 +560,7 @@ section proposition_16 -- {{{
         begin
           simp,
           split,
-            exact n_in_plus_n n,
+            exact n_in_plus_n,
 
             have h_final : forall (n_ : mynat) (F : set mynat), n_ ∈ F -> final F -> plus (succ n_) ⊆ F,
               intro n_,
@@ -586,14 +586,14 @@ section proposition_16 -- {{{
       exact set.eq_of_subset_of_subset h1 h2,
     end/- }}} -/
 
-    theorem n_not_in_plus_succ_n : n ∉ plus (succ n) :=/- {{{ -/
+    theorem n_not_in_plus_succ_n {n} : n ∉ plus (succ n) :=/- {{{ -/
       begin
         let I := {a : mynat | a ∉ plus (succ a)},
         have h_I : I = set.univ,
           apply myinduction,
 
           simp,
-          rw plus_succ zero,
+          rw plus_succ,
           unfold set.image, simp,
           exact fun b, fun _, succ_neq_0 b,
 
@@ -625,30 +625,30 @@ end proposition_16 -- }}}
 section corollary_17 -- {{{
   variable n : mynat
 
-  theorem minus_succ_n_as_union : minus (succ n) = {n} ∪ (minus n) :=
+  theorem minus_succ_n_as_union {n} : minus (succ n) = {n} ∪ (minus n) :=
     begin
       unfold minus,
-      have h1 := eq.symm (plus_n_as_union n),
-      apply_fun compl at h1,
-      rw set.compl_union _ _ at h1,
-      apply_fun (∪) {n} at h1,
-      rw set.union_distrib_left _ _ _ at h1,
-      rw set.union_compl_self _ at h1,
-      rw set.univ_inter at h1,
+      have h1 := eq.symm plus_n_as_union,
+        apply_fun compl at h1,
+        rw set.compl_union _ _ at h1,
+        apply_fun (∪) {n} at h1,
+        rw set.union_distrib_left _ _ _ at h1,
+        rw set.union_compl_self _ at h1,
+        rw set.univ_inter at h1,
 
-      have h2 := n_not_in_plus_succ_n n,
-      rw eq.symm (set.mem_compl_eq _ _) at h2,
-      rw iff.symm set.singleton_subset_iff at h2,
-      rw set.union_eq_right_iff_subset.elim_right h2 at h1,
+      have h2 := n_not_in_plus_succ_n,
+        rw eq.symm (set.mem_compl_eq _ _) at h2,
+        rw iff.symm set.singleton_subset_iff at h2,
+        rw set.union_eq_right_iff_subset.elim_right h2 at h1,
       assumption,
     end
 end corollary_17 -- }}}
 
 -- Proposition 18
-section proposition_18
+section proposition_18/- {{{ -/
   variables m n : mynat
 
-  theorem final_subset_or_superset_of_plus_n {F : set mynat} : (final F) -> (F ⊆ plus n) ∨ (plus n ⊆ F) :=/- {{{ -/
+  theorem final_subset_or_superset_of_plus_n {n} {F : set mynat} : final F -> F ⊆ plus n ∨ plus n ⊆ F :=/- {{{ -/
     begin
       intro h_F,
       let A := {p : mynat | F ⊆ plus p ∨ plus p ⊆ F },
@@ -663,7 +663,7 @@ section proposition_18
         intro h_p,
         cases h_p with h_p1 h_p2,
           simp,
-          rw plus_n_as_union p at h_p1,
+          rw plus_n_as_union at h_p1,
           cases @in_set_or_in_complement mynat F p with h_p3 h_p4,
             right, -- From here, we see that F = plus p, so we can start expanding definitions
             unfold plus,
@@ -696,29 +696,27 @@ section proposition_18
           exact h_n,
     end/- }}} -/
 
-  theorem initial_subset_or_superset_of_minus_n {I : set mynat} : (initial I) -> (I ⊆ minus n) ∨ (minus n ⊆ I) :=/- {{{ -/
+  theorem initial_subset_or_superset_of_minus_n {n} {I : set mynat} : initial I -> I ⊆ minus n ∨ minus n ⊆ I :=/- {{{ -/
     begin
-      sorry,
+      unfold initial,
+      unfold minus,
+      rw @set.subset_compl_comm mynat I (plus n),
+      rw @set.compl_subset_comm mynat (plus n) I,
+      rw or.comm,
+      exact @final_subset_or_superset_of_plus_n n Iᶜ,
     end/- }}} -/
 
-  theorem plus_n_subset_or_superset_of_plus_m  : (plus n ⊆ plus m) ∨ (plus m ⊆ plus n) :=/- {{{ -/
+  theorem plus_n_subset_or_superset_of_plus_m {n m} : plus n ⊆ plus m ∨ plus m ⊆ plus n :=/- {{{ -/
     begin
-      sorry,
-    end
+      exact final_subset_or_superset_of_plus_n plus_final,
+    end/- }}} -/
 end proposition_18/- }}} -/
+
 
 
 variable a : mynat
 
-#check in_set_or_in_complement
-#check plus_zero
-#check (∪)
-#check (∩)
-#check compl
-#check funext
-#check function.injective.mem_set_image
-#check succ_inj
-#print injective
+#check or.symm
 
 
 /- -- TODO: With my current definition, I have to prove that add is a function -/
