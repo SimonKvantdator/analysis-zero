@@ -712,10 +712,45 @@ section proposition_18/- {{{ -/
     end/- }}} -/
 end proposition_18/- }}} -/
 
+-- Proposition 19
+section proposition_19
+  theorem final_is_plus_n {F : set mynat} : final F -> exists n : mynat, F = plus n :=
+    begin
+      sorry,
+    end
+
+  theorem initial_is_minus_n {I : set mynat} : initial I -> exists n : mynat, I = minus n :=
+    begin
+      intro h_I,
+      have h_I2 : (exists n : mynat, I = minus n) ∨ not (exists n : mynat, I = minus n),
+        let AA := {A : set mynat | exists n : mynat, A = minus n},
+        exact @in_set_or_in_complement (set mynat) AA I,
+
+      cases h_I2,
+        assumption,
+
+        have h_I2 := @forall_not_of_not_exists (mynat) (fun n, I = minus n) h_I2, -- TODO
 
 
-variable a : mynat
 
+        /- have h_I3 : I = ∅ ∨ I.nonempty := set.eq_empty_or_nonempty I, -/
+        /- unfold initial, -/
+        /- unfold final, -/
+        /- simp, -/
+        /- intro h_I4, -/
+
+        /- cases h_I3, -/
+        /-   left, -/
+        /-   intro _, -/
+        /-   intro _, -/
+        /-   apply set.eq_empty_iff_forall_not_mem.elim_left h_I3 _, -/
+
+        /-   right, -/
+        /-   rw set.nonempty_def at h_I4, -/
+    end
+end proposition_19
+
+#check @in_set_or_in_complement
 #check or.symm
 
 
