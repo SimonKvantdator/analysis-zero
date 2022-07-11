@@ -420,7 +420,7 @@ section proposition_15 -- {{{
     cc,
   end -- }}}
 
-  theorem n_notin_plus_n {n} : n ∉ minus n :=/- {{{ -/
+  theorem n_notin_minus_n {n} : n ∉ minus n :=/- {{{ -/
     set.not_mem_compl_iff.elim_right n_in_plus_n/- }}} -/
 
   theorem plus_final {n} : final (plus n) := -- {{{
@@ -461,6 +461,11 @@ section proposition_15 -- {{{
       unfold minus,
       exact set.union_compl_self (plus n),
     end -- }}}
+
+  #check n_in_plus_n
+  #check n_notin_minus_n
+  #check plus_final
+  #check plus_union_minus
 end proposition_15 -- }}}
 
 -- Proposition 16
@@ -498,9 +503,9 @@ section proposition_16 -- {{{
 
       have h1 : lhs ⊆ rhs,/- {{{ -/
         have h_spn : final rhs
-          := succ_final (plus n) (plus_final n),
+          := succ_final (plus n) plus_final,
         have h_succ_n : succ n ∈ rhs
-          := set.mem_image_of_mem succ (n_in_plus_n n),
+          := set.mem_image_of_mem succ n_in_plus_n,
         exact plus_subset_final rhs (succ n) h_succ_n h_spn,/- }}} -/
 
       have h2 : rhs ⊆ lhs,/- {{{ -/
@@ -618,7 +623,6 @@ section proposition_16 -- {{{
     
   #check plus_succ
   #check plus_n_as_union
-  #check n_notin_plus_n
 end proposition_16 -- }}}
 
 -- Corollary 17
@@ -714,44 +718,130 @@ end proposition_18/- }}} -/
 
 -- Proposition 19
 section proposition_19
-  theorem final_is_plus_n {F : set mynat} : final F -> exists n : mynat, F = plus n :=
+  lemma exists_n_on_boundary {I : set mynat} : initial I -> I.nonempty -> Iᶜ.nonempty -> exists n ∈ I, succ n ∉ I :=/- {{{ -/
     begin
-      sorry,
-    end
+      intro h_I1,
+      intro h_I2,
+      intro h_I3,
+      let A := {n : mynat | n ∉ I -> (exists m ∈ I, succ(m) ∉ I)},
+      have h_A : A = set.univ,
+        apply myinduction,
+        
+        simp,
+        intro h_I,
+        exfalso,
+        exact set.nonempty.ne_empty h_I2 (initial_without_zero I h_I1 h_I),
 
-  theorem initial_is_minus_n {I : set mynat} : initial I -> exists n : mynat, I = minus n :=
+        intro n,
+        simp,
+        intro h_n2,
+        intro h_succ_n,
+        have h_n3 := @in_set_or_in_complement mynat I n,
+        cases h_n3,
+          use n,
+          exact and.intro h_n3 h_succ_n,
+
+          simp at h_n3,
+          exact h_n2 h_n3,
+
+      simp,
+      have h_I4 : exists (p : mynat), p ∈ Iᶜ
+        := set.nonempty_def.elim_left h_I3,
+      cases h_I4 with p h_I4, simp at h_I4,
+      have h_p : p ∈ A,
+        rw h_A,
+        exact set.mem_univ p,
+      simp only [A] at h_p,
+      simp at h_p,
+      exact h_p h_I4,
+    end/- }}} -/
+
+    lemma trapped_between_two_sets {t : Type} {A B : set t} {b : t} : B ⊆ A -> A ⊆ {b} ∪ B -> (A = B) ∨ (A = {b} ∪ B) :=/- {{{ -/
+      begin
+        intro h_AB,
+        intro h_BA,
+        have h_b := @in_set_or_in_complement t A b,
+        cases h_b,
+          right,
+          have h_AB_ : {b} ∪ B ⊆ A,
+            exact set.union_subset (set.singleton_subset_iff.elim_right h_b) h_AB,
+          exact set.eq_of_subset_of_subset h_BA h_AB_,
+
+          left,
+          have h_BA_ : A ⊆ B,
+            have h1 := set.singleton_subset_iff.elim_right h_b,
+            have h2 := set.union_subset_union_left B h1,
+            have h3 := set.subset.trans h_BA h2,
+
+            rw eq.symm (set.inter_self A),
+            exact (set.inter_subset A A B).elim_right h3,
+
+          exact set.subset.antisymm h_BA_ h_AB,
+      end/- }}} -/
+
+  theorem initial_is_minus_n {I : set mynat} : initial I -> exists n : mynat, I = minus n :=/- {{{ -/
     begin
       intro h_I,
-      have h_I2 : (exists n : mynat, I = minus n) ∨ not (exists n : mynat, I = minus n),
-        let AA := {A : set mynat | exists n : mynat, A = minus n},
-        exact @in_set_or_in_complement (set mynat) AA I,
 
+      have h_I1 := h_I,
+      unfold initial at h_I1,
+      unfold final at h_I1,
+
+      have h_I2 : I = ∅  ∨ I.nonempty, exact set.eq_empty_or_nonempty I,
       cases h_I2,
+        use zero,
+        rw h_I2,
+        exact eq.symm minus_zero,
+
+        have h_I3 := exists_n_on_boundary h_I h_I2 h_I1.elim_left,
+        cases h_I3 with p h_I3,
+        cases h_I3 with h_I3 h_I4,
+
+        have h_I5 : minus p ⊆ I,
+          have h_I5_ : not (I ⊆ minus p),
+            intro h1,
+            have h2 : p ∈ minus p := h1 h_I3,
+            exact n_notin_minus_n h2,
+          exact or_iff_not_imp_left.elim_left (initial_subset_or_superset_of_minus_n h_I) h_I5_,
+
+        have h_I6 : {p} ∪ minus p ⊆ I,
+          exact set.union_subset (set.singleton_subset_iff.elim_right h_I3) h_I5,
+
+        have h_I7 : I ⊆ minus (succ $ succ p),
+          have h_I7_ : not (minus (succ $ succ p) ⊆ I),
+            intro h1,
+            have h2 := set.not_mem_subset h1 h_I4,
+            unfold minus at h2, simp at h2,
+            exact n_not_in_plus_succ_n h2,
+          exact or_iff_not_imp_left.elim_left (or.symm $ initial_subset_or_superset_of_minus_n h_I) h_I7_,
+
+        repeat {rw minus_succ_n_as_union at h_I7},
+        
+        have h_I8 := trapped_between_two_sets h_I6 h_I7,
+        cases h_I8,
+          use succ p,
+          rw minus_succ_n_as_union,
+          exact h_I8,
+
+          use succ (succ p),
+          repeat {rw minus_succ_n_as_union},
+          exact h_I8,
+    end/- }}} -/
+
+  theorem final_is_plus_n {F : set mynat} : final F -> exists n : mynat, F = plus n :=/- {{{ -/
+    begin
+      intro h_F1,
+      have h_F2 : initial Fᶜ,
+        unfold initial,
+        simp,
         assumption,
+      have h_F3 := initial_is_minus_n h_F2,
+      unfold minus at h_F3,
 
-        have h_I2 := @forall_not_of_not_exists (mynat) (fun n, I = minus n) h_I2, -- TODO
-
-
-
-        /- have h_I3 : I = ∅ ∨ I.nonempty := set.eq_empty_or_nonempty I, -/
-        /- unfold initial, -/
-        /- unfold final, -/
-        /- simp, -/
-        /- intro h_I4, -/
-
-        /- cases h_I3, -/
-        /-   left, -/
-        /-   intro _, -/
-        /-   intro _, -/
-        /-   apply set.eq_empty_iff_forall_not_mem.elim_left h_I3 _, -/
-
-        /-   right, -/
-        /-   rw set.nonempty_def at h_I4, -/
-    end
+      simp at h_F3,
+      assumption,
+    end/- }}} -/
 end proposition_19
-
-#check @in_set_or_in_complement
-#check or.symm
 
 
 /- -- TODO: With my current definition, I have to prove that add is a function -/
