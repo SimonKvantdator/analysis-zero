@@ -717,7 +717,7 @@ section proposition_18/- {{{ -/
 end proposition_18/- }}} -/
 
 -- Proposition 19
-section proposition_19
+section proposition_19/- {{{ -/
   lemma exists_n_on_boundary {I : set mynat} : initial I -> I.nonempty -> Iᶜ.nonempty -> exists n ∈ I, succ n ∉ I :=/- {{{ -/
     begin
       intro h_I1,
@@ -781,11 +781,7 @@ section proposition_19
 
   theorem initial_is_minus_n {I : set mynat} : initial I -> exists n : mynat, I = minus n :=/- {{{ -/
     begin
-      intro h_I,
-
-      have h_I1 := h_I,
-      unfold initial at h_I1,
-      unfold final at h_I1,
+      intro h_I1,
 
       have h_I2 : I = ∅  ∨ I.nonempty, exact set.eq_empty_or_nonempty I,
       cases h_I2,
@@ -793,7 +789,7 @@ section proposition_19
         rw h_I2,
         exact eq.symm minus_zero,
 
-        have h_I3 := exists_n_on_boundary h_I h_I2 h_I1.elim_left,
+        have h_I3 := exists_n_on_boundary h_I1 h_I2 h_I1.elim_left,
         cases h_I3 with p h_I3,
         cases h_I3 with h_I3 h_I4,
 
@@ -802,7 +798,7 @@ section proposition_19
             intro h1,
             have h2 : p ∈ minus p := h1 h_I3,
             exact n_notin_minus_n h2,
-          exact or_iff_not_imp_left.elim_left (initial_subset_or_superset_of_minus_n h_I) h_I5_,
+          exact or_iff_not_imp_left.elim_left (initial_subset_or_superset_of_minus_n h_I1) h_I5_,
 
         have h_I6 : {p} ∪ minus p ⊆ I,
           exact set.union_subset (set.singleton_subset_iff.elim_right h_I3) h_I5,
@@ -813,7 +809,7 @@ section proposition_19
             have h2 := set.not_mem_subset h1 h_I4,
             unfold minus at h2, simp at h2,
             exact n_not_in_plus_succ_n h2,
-          exact or_iff_not_imp_left.elim_left (or.symm $ initial_subset_or_superset_of_minus_n h_I) h_I7_,
+          exact or_iff_not_imp_left.elim_left (or.symm $ initial_subset_or_superset_of_minus_n h_I1) h_I7_,
 
         repeat {rw minus_succ_n_as_union at h_I7},
         
@@ -841,7 +837,99 @@ section proposition_19
       simp at h_F3,
       assumption,
     end/- }}} -/
-end proposition_19
+end proposition_19/- }}} -/
+
+-- Proposition 20
+section proposition_20
+  variables m n : mynat
+
+  lemma x_notin_set {t : Type} {A : set t} {x : t} : x ∉ A -> ¬A = set.univ :=/- {{{ -/
+    begin
+      intro h_x,
+      apply set.nonempty_compl.elim_left,
+      exact set.nonempty_of_mem (set.mem_compl h_x),
+    end/- }}} -/
+
+  theorem plus_inj {m n} : m = n <-> plus m = plus n :=/- {{{ -/
+    begin
+      split,
+        intro h,
+        rw h,
+
+        intro h,
+
+        -- Double induction
+        let AA := fun n, {m : mynat | m = n ∨ plus m ≠ plus n},
+        let BB := {n : mynat | AA n = set.univ},
+        have h_BB : BB = set.univ,
+          apply myinduction,
+
+          simp only [BB], simp,
+          apply myinduction,
+            simp only [AA], simp,
+
+            intro _,
+            simp only [AA], simp,
+            intro _,
+            right,
+            rw plus_zero,
+            exact x_notin_set n_not_in_plus_succ_n,
+
+          simp only [BB], simp,
+          intro n_,
+          intro h_n_,
+          apply myinduction,
+            simp only [AA], simp,
+            right,
+            rw plus_zero,
+            rw eq_comm,
+            exact (x_notin_set n_not_in_plus_succ_n),
+
+            intro m_,
+            intro h_m_,
+            simp only [AA], simp,
+
+            simp only [AA] at h_n_, simp at h_n_,
+            rw set.eq_univ_iff_forall at h_n_, simp at h_n_,
+            have h_n_m_ := h_n_ m_,
+            cases h_n_m_,
+              left,
+              rw h_n_m_,
+
+              right,
+              repeat {rw plus_succ},
+              rw set.image_eq_image (succ_inj),
+              exact h_n_m_,
+
+        -- This is the last part of the induction. It is not very clean. TODO: Maybe I can build nice interface for induction?
+        have h_nm : n ∈ BB,
+          begin
+            rw h_BB,
+            exact set.mem_univ n,
+          end,
+        simp at h_nm,
+        simp only [AA] at h_nm, simp at h_nm,
+        rw set.eq_univ_iff_forall at h_nm, simp at h_nm,
+        cases h_nm m,
+          assumption,
+
+          exfalso,
+          exact h_1 h,
+    end/- }}} -/
+
+  theorem minus_inj {m n} : m = n <-> minus m = minus n :=/- {{{ -/
+    begin
+      unfold minus,
+      have compl_inj : forall (A B : set mynat), A = B <-> Aᶜ = Bᶜ,
+        simp,
+      rw iff.symm (compl_inj _ _),
+      
+      exact plus_inj,
+    end/- }}} -/
+end proposition_20
+
+#check eq.symm
+#check plus_final
 
 
 /- -- TODO: With my current definition, I have to prove that add is a function -/
