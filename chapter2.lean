@@ -6,10 +6,10 @@ namespace mynat
 -- TODO: move to another file?
 section set_stuff -- {{{
   variables T T1 T2 : Type -- TODO: close the scope for t1 and t2?
-  def injective {T1 T2} (f : T1 -> T2) : Prop := forall a b : T1, f a = f b -> a = b -- Can be used interchangably with function.injective from core.
+  def injective {T1 T2} (f : T1 -> T2) := forall a b : T1, f a = f b -> a = b -- Can be used interchangably with function.injective from core.
 
-  def surjective {T1 T2} (f : T1 -> T2) : Prop := forall b : T2, exists a : T1, f a = b
-  def bijective {T1 T2} (f : T1 -> T2) : Prop := and (injective f) (surjective f)
+  def surjective {T1 T2} (f : T1 -> T2) := forall b : T2, exists a : T1, f a = b
+  def bijective {T1 T2} (f : T1 -> T2) := and (injective f) (surjective f)
 
   -- TODO: What is the most natural way to do this? With or without the set library?
   /- def nonempty (T : Type) : Prop := exists (t : T), true -/
@@ -81,8 +81,8 @@ axiom zero : mynat
 
 -- Axiom 2.2
 axiom succ : mynat -> mynat
-axiom succ_neq_0 : forall a : mynat, not (succ a = zero)
-axiom succ_sur : forall a : mynat, not (a = zero) -> exists b : mynat, succ b = a -- succ is surjective onto mynat - zero, hence we can't just write succ_sur = surjective succ.
+axiom succ_neq_0 {a : mynat} : not (succ a = zero)
+axiom succ_sur {a : mynat} : not (a = zero) -> exists b : mynat, succ b = a -- succ is surjective onto mynat - zero, hence we can't just write succ_sur = surjective succ.
 axiom succ_inj : injective succ
 
 
@@ -112,9 +112,13 @@ example : infinite mynat :=
 
       dunfold surjective, -- dunfolds unfolds definitions :)
       intro h,
-      exact exists.elim (h zero) succ_neq_0,
+      exact exists.elim (h zero) @succ_neq_0,
   end
 -- }}}
+
+
+-- ORDERING THE NATURALS
+/- {{{ -/
 
 -- Initial and Final subsets of the naturals
 -- Definition 2.3 {{{
@@ -600,7 +604,7 @@ section proposition_16 -- {{{
           simp,
           rw plus_succ,
           unfold set.image, simp,
-          exact fun b, fun _, succ_neq_0 b,
+          exact fun b, fun _, succ_neq_0,
 
           simp,
           intro n,
@@ -840,7 +844,7 @@ section proposition_19/- {{{ -/
 end proposition_19/- }}} -/
 
 -- Proposition 20
-section proposition_20
+section proposition_20/- {{{ -/
   variables m n : mynat
 
   lemma x_notin_set {t : Type} {A : set t} {x : t} : x ∉ A -> ¬A = set.univ :=/- {{{ -/
@@ -926,10 +930,164 @@ section proposition_20
       
       exact plus_inj,
     end/- }}} -/
-end proposition_20
+end proposition_20/- }}} -/
 
-#check eq.symm
-#check plus_final
+-- ≤, <, ≥, > for the naturals
+-- Definition 2.5{{{
+def leq (m n : mynat) : Prop := minus m ⊆ minus n
+infix `≤`:80 := leq -- Overwrites previous notation
+
+def lt (m n : mynat) : Prop := m ≤ n ∧ not (m = n)
+infix `<`:80 := lt
+
+def geq (m n : mynat) : Prop := n ≤ m
+infix `≥`:80 := geq
+
+def gt (m n : mynat) : Prop := n < m
+infix `>`:80 := gt
+/- }}} -/
+
+-- Proposition 21
+section proposition_21/- {{{ -/
+  variables m n : mynat
+
+  theorem leq_iff_cond2 {m n} : m ≤ n <-> plus n ⊆ plus m :=/- {{{ -/
+    begin
+      unfold leq,
+      unfold minus,
+      simp *,
+    end/- }}} -/
+
+  theorem leq_iff_cond3 {m n} : m ≤ n <-> n ∈ plus m :=/- {{{ -/
+    begin
+      have h : n ∈ plus m <-> plus n ⊆ plus m,
+        split,
+          intro h_n,
+          exact plus_subset_final _ _ h_n plus_final,
+
+          intro h_mn,
+          have h_n : n ∈ plus n
+            := n_in_plus_n,
+          exact h_mn h_n,
+
+      rw h,
+      exact leq_iff_cond2,
+    end/- }}} -/
+end proposition_21/- }}} -/
+
+-- Proposition 22
+section proposition_22/- {{{ -/
+  variable n : mynat
+
+  lemma n_neq_succ_n {n} : not (n = succ n) :=/- {{{ -/
+    begin
+      let AA := {n : mynat | not (n = succ n)},
+      have h_AA : AA = set.univ,
+        apply myinduction,
+
+        simp,
+        rw eq_comm,
+        exact succ_neq_0,
+
+        intro n',
+        simp,
+        intro h_n'1,
+        intro h_n'2,
+        exact h_n'1 (succ_inj _ _ h_n'2),
+
+      simp only [AA] at h_AA,
+      rw set.eq_univ_iff_forall at h_AA,
+      simp at h_AA,
+      exact h_AA n,
+    end/- }}} -/
+
+  theorem n_lt_succ_n {n} : n < succ n :=/- {{{ -/
+    begin
+      unfold lt,
+      split,
+        unfold leq,
+        rw minus_succ_n_as_union,
+        simp,
+
+        exact n_neq_succ_n,
+    end/- }}} -/
+end proposition_22/- }}} -/
+
+-- Proposition 23
+section proposition_23/- {{{ -/
+  variables m n : mynat
+
+  lemma implies_and_helper {a b c : Prop} : (a -> b ∧ c) <-> (a -> b) ∧ (a -> c) :=/- {{{ -/
+    begin
+      split,
+        intro h,
+        split,
+          cc,
+          cc,
+        intro h,
+        cc,
+    end/- }}} -/
+
+  -- TODO: Challenge mode: prove without any intros
+  theorem lt_iff_cond2 {m n} : m < n <-> plus n ⊆ plus (succ m) :=/- {{{ -/
+    begin
+      have h1 : forall x : mynat, plus (succ x) = plus x \ {x},
+        intro x,
+        rw @plus_n_as_union x,
+        simp,
+        have h_x := @n_not_in_plus_succ_n x,
+        simp *,
+
+      unfold lt,
+      rw set.subset_def,
+      rw h1 m,
+      simp,
+      simp_rw implies_and_helper,
+      rw forall_and_distrib,
+
+      have h2 : m ≤ n ↔ ∀ (x : mynat), x ∈ plus n → x ∈ plus m
+        := @leq_iff_cond2 m n,
+
+      split,
+        intro h_mn,
+        cases h_mn,
+        split,
+          exact h2.elim_left h_mn_left,
+
+          intro x,
+          intro h_x1,
+          unfold leq at h_mn_left,
+          unfold minus at h_mn_left, simp at h_mn_left,
+          intro h_x2,
+          rw h_x2 at h_x1,
+          have h_m : plus m ⊆ plus n
+            := plus_subset_final (plus n) _ h_x1 plus_final,
+          have h_mn1 : plus m = plus n
+            := set.subset.antisymm _ _,
+          have h_mn2 : m = n
+            := plus_inj.elim_right _,
+          exact h_mn_right h_mn2,
+
+        assumption, assumption, assumption,
+
+        intro h_mn,
+        cases h_mn,
+        split,
+          exact h2.elim_right h_mn_left,
+          
+          rw eq_comm,
+          exact h_mn_right n n_in_plus_n,
+    end/- }}} -/
+
+  theorem lt_iff_cond3 {m n} : m < n <-> n ∈ plus (succ m) :=/- {{{ -/
+    begin
+      unfold lt,
+    end/- }}} -/
+end proposition_23/- }}} -/
+
+
+
+/- }}} -/
 
 
 /- -- TODO: With my current definition, I have to prove that add is a function -/
