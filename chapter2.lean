@@ -1017,74 +1017,61 @@ end proposition_22/- }}} -/
 section proposition_23/- {{{ -/
   variables m n : mynat
 
-  lemma implies_and_helper {a b c : Prop} : (a -> b ∧ c) <-> (a -> b) ∧ (a -> c) :=/- {{{ -/
-    begin
-      split,
-        intro h,
+    theorem lt_iff_cond2 {m n} : m < n <-> plus n ⊆ plus (succ m) :=/- {{{ -/
+      begin
+        unfold lt,
+        unfold leq,
+        unfold minus, simp,
+        rw plus_inj,
+        rw eq_comm,
+        rw eq.symm (ne.def _ _),
+        rw iff.symm set.ssubset_iff_subset_ne,
+
+        have h_m1 : plus (succ m) = plus m \ {m},
+          rw @plus_n_as_union m,
+          simp,
+          rw set.diff_singleton_eq_self,
+          exact n_not_in_plus_succ_n,
+        rw h_m1,
+
         split,
-          cc,
-          cc,
-        intro h,
-        cc,
-    end/- }}} -/
+          intro h_nm,
+          rw set.ssubset_def at h_nm,
+          cases h_nm,
+          have h_m2 : m ∉ plus n,
+            intro h_m',
+            have h_nm' := plus_subset_final _ m h_m' plus_final,
+            exact h_nm_right h_nm',
+          exact set.subset_diff_singleton h_nm_left h_m2,
 
-  -- TODO: Challenge mode: prove without any intros
-  theorem lt_iff_cond2 {m n} : m < n <-> plus n ⊆ plus (succ m) :=/- {{{ -/
-    begin
-      have h1 : forall x : mynat, plus (succ x) = plus x \ {x},
-        intro x,
-        rw @plus_n_as_union x,
-        simp,
-        have h_x := @n_not_in_plus_succ_n x,
-        simp *,
+          have h_m3 : plus m \ {m} ⊂ plus m,
+            have h_m3' : plus m \ {m} ⊆ plus m, simp,
+            rw (set.ssubset_iff_of_subset h_m3'),
+            use m,
+            split,
+              exact n_in_plus_n,
+              simp,
 
-      unfold lt,
-      rw set.subset_def,
-      rw h1 m,
-      simp,
-      simp_rw implies_and_helper,
-      rw forall_and_distrib,
-
-      have h2 : m ≤ n ↔ ∀ (x : mynat), x ∈ plus n → x ∈ plus m
-        := @leq_iff_cond2 m n,
-
-      split,
-        intro h_mn,
-        cases h_mn,
-        split,
-          exact h2.elim_left h_mn_left,
-
-          intro x,
-          intro h_x1,
-          unfold leq at h_mn_left,
-          unfold minus at h_mn_left, simp at h_mn_left,
-          intro h_x2,
-          rw h_x2 at h_x1,
-          have h_m : plus m ⊆ plus n
-            := plus_subset_final (plus n) _ h_x1 plus_final,
-          have h_mn1 : plus m = plus n
-            := set.subset.antisymm _ _,
-          have h_mn2 : m = n
-            := plus_inj.elim_right _,
-          exact h_mn_right h_mn2,
-
-        assumption, assumption, assumption,
-
-        intro h_mn,
-        cases h_mn,
-        split,
-          exact h2.elim_right h_mn_left,
-          
-          rw eq_comm,
-          exact h_mn_right n n_in_plus_n,
-    end/- }}} -/
+          intro h_nm,
+          exact set.ssubset_of_subset_of_ssubset h_nm h_m3,
+      end/- }}} -/
 
   theorem lt_iff_cond3 {m n} : m < n <-> n ∈ plus (succ m) :=/- {{{ -/
     begin
-      unfold lt,
+      have h : n ∈ plus (succ m) <-> plus n ⊆ plus (succ m),
+        split,
+          intro h_n,
+          exact plus_subset_final (plus (succ m)) _ h_n plus_final,
+
+          intro h_n,
+          exact h_n n_in_plus_n,
+
+      rw h,
+      exact lt_iff_cond2,
     end/- }}} -/
 end proposition_23/- }}} -/
 
+#check plus_subset_final
 
 
 /- }}} -/
