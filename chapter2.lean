@@ -933,9 +933,10 @@ section proposition_20/- {{{ -/
 end proposition_20/- }}} -/
 
 -- ≤, <, ≥, > for the naturals
--- Definition 2.5{{{
+-- Definition 2.5 {{{
+-- Overwrites previous notation
 def leq (m n : mynat) : Prop := minus m ⊆ minus n
-infix `≤`:80 := leq -- Overwrites previous notation
+infix `≤`:80 := leq 
 
 def lt (m n : mynat) : Prop := m ≤ n ∧ not (m = n)
 infix `<`:80 := lt
