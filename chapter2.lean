@@ -654,9 +654,9 @@ end corollary_17 -- }}}
 
 -- Proposition 18
 section proposition_18/- {{{ -/
-  variables m n : mynat
+  variables {m n : mynat}
 
-  theorem final_subset_or_superset_of_plus_n {n} {F : set mynat} : final F -> F ⊆ plus n ∨ plus n ⊆ F :=/- {{{ -/
+  theorem final_subset_or_superset_of_plus_n {F : set mynat} : final F -> F ⊆ plus n ∨ plus n ⊆ F :=/- {{{ -/
     begin
       intro h_F,
       let A := {p : mynat | F ⊆ plus p ∨ plus p ⊆ F },
@@ -704,7 +704,7 @@ section proposition_18/- {{{ -/
           exact h_n,
     end/- }}} -/
 
-  theorem initial_subset_or_superset_of_minus_n {n} {I : set mynat} : initial I -> I ⊆ minus n ∨ minus n ⊆ I :=/- {{{ -/
+  theorem initial_subset_or_superset_of_minus_n {I : set mynat} : initial I -> I ⊆ minus n ∨ minus n ⊆ I :=/- {{{ -/
     begin
       unfold initial,
       unfold minus,
@@ -714,7 +714,7 @@ section proposition_18/- {{{ -/
       exact @final_subset_or_superset_of_plus_n n Iᶜ,
     end/- }}} -/
 
-  theorem plus_n_subset_or_superset_of_plus_m {n m} : plus n ⊆ plus m ∨ plus m ⊆ plus n :=/- {{{ -/
+  theorem plus_n_subset_or_superset_of_plus_m : plus n ⊆ plus m ∨ plus m ⊆ plus n :=/- {{{ -/
     begin
       exact final_subset_or_superset_of_plus_n plus_final,
     end/- }}} -/
@@ -933,20 +933,24 @@ section proposition_20/- {{{ -/
 end proposition_20/- }}} -/
 
 -- ≤, <, ≥, > for the naturals
--- Definition 2.5 {{{
--- Overwrites previous notation
-def leq (m n : mynat) : Prop := minus m ⊆ minus n
-infix `≤`:80 := leq 
+section definition_2_5 -- {{{
+  variables m n : mynat
 
-def lt (m n : mynat) : Prop := m ≤ n ∧ not (m = n)
-infix `<`:80 := lt
-
-def geq (m n : mynat) : Prop := n ≤ m
-infix `≥`:80 := geq
-
-def gt (m n : mynat) : Prop := n < m
-infix `>`:80 := gt
-/- }}} -/
+  -- Overwrites previous notation
+  def leq (m n) : Prop := minus m ⊆ minus n
+  infix `≤`:80 := leq 
+  
+  def lt (m n) : Prop := m ≤ n ∧ not (m = n)
+  infix `<`:80 := lt
+  
+  @[reducible] -- reducible attribute means definition is eagerly unfolded. a ≥ b is just an abbreviation for b ≤ a.
+  def geq (m n) : Prop := n ≤ m
+  infix `≥`:80 := geq
+  
+  @[reducible]
+  def gt (m n) : Prop := n < m
+  infix `>`:80 := gt
+end definition_2_5 -- }}}
 
 -- Proposition 21
 section proposition_21/- {{{ -/
@@ -1002,8 +1006,8 @@ section proposition_22/- {{{ -/
       exact h_AA n,
     end/- }}} -/
 
-  @[simp]
-  theorem n_lt_succ_n {n} : n < succ n :=/- {{{ -/
+  -- TODO: use local attribute instead?
+  @[simp] theorem n_lt_succ_n {n} : n < succ n :=/- {{{ -/
     begin
       unfold lt,
       split,
@@ -1073,6 +1077,98 @@ section proposition_23/- {{{ -/
     end/- }}} -/
 end proposition_23/- }}} -/
 
+-- Orders
+section defining_order/- {{{ -/
+  variable {A : Type}
+
+  -- O'Farrell defines a relation as a subset of A×A, but this definition is easier to work with
+  def relation (A) := A -> A -> Prop
+
+  def partial_order {A} (r : relation A) : Prop :=
+    forall x y z : A,
+      (r x x) /\
+      ((r x y) /\ (r y x) -> x = y) /\
+      ((r x y) /\ (r y z) -> r x z)
+
+  def total_order {A} (r : relation A) : Prop :=
+    (partial_order r) /\
+    (forall x y : A,
+      r x y \/ r y x)
+
+  def min {A} {r} (hr : total_order r) (x y : A) : A :=
+    or.cases_on (hr.right x y) (fun _, x) (fun _, y)
+
+  def max {A} {r} (hr : total_order r) (x y : A) : A :=
+    or.cases_on (hr.right x y) (fun _, y) (fun _, x)
+
+  def least_element (r : relation A) (l : A) (B : set A) :=
+    forall x ∈ B, r l x
+
+  def greatest_element (r : relation A) (u : A) (B : set A) :=
+    forall x ∈ B, r x u
+
+  -- TODO: Is there a better, more verbatim, way to write down def 1.21?
+  def well_order (r : relation A) :=
+    forall (B : set A),
+      exists l ∈ B, least_element r l B
+end defining_order/- }}} -/
+
+-- Proposition 24
+section proposition_24/- {{{ -/
+  theorem min_plus_n {n : mynat} : least_element leq n (plus n) :=
+  begin
+    unfold least_element,
+    intros x hx,
+    exact leq_iff_cond3.elim_right hx,
+  end
+end proposition_24/- }}} -/
+
+-- Proposition 25
+section proposition_25/- {{{ -/
+  theorem naturals_ordered : total_order leq :=
+  begin
+    unfold total_order,
+    split,
+      unfold partial_order,
+      intros x y z,
+      split,
+        exact set.subset.refl (minus x),
+
+      split,
+        intro h_xy,
+        have h_xy' : minus x = minus y
+          := set.eq_of_subset_of_subset h_xy.left h_xy.right,
+        exact minus_inj.elim_right h_xy',
+
+        intro h_xyz,
+        exact set.subset.trans h_xyz.left h_xyz.right,
+
+      intros x y,
+      unfold leq, unfold minus, simp,
+      exact plus_n_subset_or_superset_of_plus_m,
+  end
+end proposition_25/- }}} -/
+
+-- Proposition 26
+section proposition_26/- {{{ -/
+  theorem trapped_between_n_and_succ_n {n m : mynat} (h_m : n ≤ m /\ m ≤ succ n) : m = n \/ m = succ n :=
+  begin
+    unfold leq at h_m,
+    unfold minus at h_m, simp at h_m,
+    cases h_m,
+    rw @plus_n_as_union n at h_m_left,
+
+    have h_m' : plus m = plus (succ n) ∨ plus m = {n} ∪ plus (succ n)
+      := trapped_between_two_sets h_m_right h_m_left,
+
+    rw plus_n_as_union.symm at h_m',
+    rw plus_inj.symm at h_m',
+    rw plus_inj.symm at h_m',
+    rw or.comm at h_m',
+    exact h_m',
+  end
+end proposition_26/- }}} -/
+
 /- }}} -/
 
 
@@ -1120,8 +1216,6 @@ section theorem_28
         exact x.prop.elim,
 
   end
-
-
 
 end theorem_28
 
