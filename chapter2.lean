@@ -1002,6 +1002,7 @@ section proposition_22/- {{{ -/
       exact h_AA n,
     end/- }}} -/
 
+  @[simp]
   theorem n_lt_succ_n {n} : n < succ n :=/- {{{ -/
     begin
       unfold lt,
@@ -1072,11 +1073,71 @@ section proposition_23/- {{{ -/
     end/- }}} -/
 end proposition_23/- }}} -/
 
-#check plus_subset_final
+/- }}} -/
+
+
+-- INDUCTIVE DEFINITIONS 
+/- {{{ -/
+
+-- Theorem 28
+section theorem_28
+  variable {AA : Type}
+  variable {A : set AA}
+  variable {h_A : A.nonempty}
+
+  -- TODO: how to use macro?
+  /- variable B : Type -/
+  /- def B := (Σ (n : mynat), (minus n -> A)) -/
+  lemma leq_zero {n : mynat} : (n ≤ zero) <-> n = zero :=
+  begin
+    sorry,
+  end
+  
+  theorem inductive_definitions_general
+    (g : (Σ n : mynat, minus n -> A) -> A) :
+    ∃! (f : mynat -> A),
+      forall m : mynat,
+        f m = g ⟨m, (minus m).restrict f⟩
+    :=
+  begin
+    /- apply exists_unique.intro, -/
+    apply exists_unique_of_exists_of_unique,
+
+      let I := {n : mynat | exists (h : mynat -> A), forall m ≤ n, h m = g ⟨m, (minus m).restrict h⟩},
+      have h_I : I = set.univ,
+      apply myinduction,
+        simp,
+
+        have h_ : mynat -> A, sorry,
+        simp [leq_zero],
+        use (fun _, g ⟨zero, (minus zero).restrict h_⟩),
+
+        -- TODO: Understand this
+        congr' 2,
+        ext x,
+        dsimp,
+        rw minus_zero at x,
+        exact x.prop.elim,
+
+  end
+
+
+
+end theorem_28
+
+variable AA : Type
+variable A : set AA
+variable f : AA -> mynat
+#check set.restrict A f
+#check set.restrict
+#print Σ
+#check exists_unique
+
+/- #check exists_unique -/
+/- #check ∃! -/
 
 
 /- }}} -/
-
 
 /- -- TODO: With my current definition, I have to prove that add is a function -/
 /- lemma add_is_well_defined {a b : mynat} : -/

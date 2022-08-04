@@ -1,5 +1,3 @@
 *.olean
-test.lean
 /_target
 /leanpkg.path
-/leanpkg.toml
