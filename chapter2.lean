@@ -25,13 +25,13 @@ section set_stuff -- {{{
 
   -- TODO: this can be done much conciser?
   def in_set_or_in_complement {T} {A : set T} : forall a : T, or (a ∈ A) (a ∈ Aᶜ) :=
-    begin
-      intro a,
-      have h_n_ : a ∈ set.univ, exact (set.mem_univ a),
-      rw (eq.symm $ set.union_compl_self A) at h_n_,
-      rw (set.mem_union a A Aᶜ) at h_n_,
-      exact h_n_,
-    end
+  begin
+    intro a,
+    have h_n_ : a ∈ set.univ, exact (set.mem_univ a),
+    rw (eq.symm $ set.union_compl_self A) at h_n_,
+    rw (set.mem_union a A Aᶜ) at h_n_,
+    exact h_n_,
+  end
 end set_stuff -- }}}
 
 -- Some logic stuff
@@ -53,24 +53,30 @@ section logic_stuff -- {{{
       exact (exists.elim h_pt) h,
   end/- }}} -/
 
-    lemma contrapositive {A B : Prop} : (A <-> B) -> (not A <-> not B) :=/- {{{ -/
-      begin
-        intro h_AB,
-        split,
-          intro h_nA,
-          intro h_B,
-          have h_A : A := h_AB.elim_right h_B,
-          exact h_nA h_A,
+  lemma contrapositive {A B : Prop} : (A <-> B) -> (not A <-> not B) :=/- {{{ -/
+  begin
+    intro h_AB,
+    split,
+      intro h_nA,
+      intro h_B,
+      have h_A : A := h_AB.elim_right h_B,
+      exact h_nA h_A,
 
-          intro h_nB,
-          intro h_A,
-          have h_B : B := h_AB.elim_left h_A,
-          exact h_nB h_B,
-      end/- }}} -/
+      intro h_nB,
+      intro h_A,
+      have h_B : B := h_AB.elim_left h_A,
+      exact h_nB h_B,
+  end/- }}} -/
 
   -- TODO
   /- def not_forall_simp : (not (forall t, p t)) <-> (exists t, not (p t)) := sorry -/ 
-end logic_stuff -- }}}
+end logic_stuff
+
+#print axioms in_set_or_in_complement
+#print axioms not_exists_simp
+#print axioms contrapositive
+ -- }}}
+
 
 --------------------------------------------------------------------------------
 
@@ -124,7 +130,7 @@ example : infinite mynat :=
 -- Definition 2.3 {{{
 def final (A : set mynat) : Prop :=
   and
-    (A.nonempty) -- mathlib docs: "The property s.nonempty expresses the fact that the set s is not empty. It should be used in theorem assumptions instead of ∃ x, x ∈ s or s ≠ ∅ as it gives access to a nice API thanks to the dot notation."
+    (A.nonempty) -- mathlib docs: "The property s.nonempty expresses the fact that the set s is not empty. It should be used in theorem assumptions instead of ∃ x, x ∈ s or s ≠ ∅  as it gives access to a nice API thanks to the dot notation."
     (forall n : mynat, n ∈ A -> succ n ∈ A)
 
 def initial (A : set mynat) : Prop :=
@@ -525,7 +531,7 @@ section proposition_16 -- {{{
         let F1 := lhs ∪ {n},
         have h_F1 : final (lhs ∪ {n}), -- TODO: Why can't I just write final F1 here?
           rw set.union_comm lhs {n},
-          exact final_n_union_psn n,
+          exact final_n_union_psn,
 
         have h_n : n ∈ F1
           := set.mem_union_right lhs (set.mem_singleton n),
@@ -544,7 +550,7 @@ section proposition_16 -- {{{
 
           rw eq.symm h_r_right,
           rw h_r,
-          exact n_in_plus_n (succ n),/- }}} -/
+          exact n_in_plus_n,/- }}} -/
           
       exact set.eq_of_subset_of_subset h1 h2,
     end -- }}}
@@ -589,7 +595,7 @@ section proposition_16 -- {{{
               rw eq.symm h_r2,
               exact h_F.elim_right r h_r1,
 
-            exact h_final n lhs (n_in_plus_n n) (plus_final n),
+            exact h_final n lhs n_in_plus_n plus_final,
         end,/- }}} -/
 
       exact set.eq_of_subset_of_subset h1 h2,
@@ -1209,8 +1215,8 @@ section theorem_28
         use (fun _, g ⟨zero, (minus zero).restrict h_⟩),
 
         -- TODO: Understand this
-        congr' 2,
-        ext x,
+        congr' 2, -- Goal is of the form f a = f b, so it suffices to show that a = b
+        ext x, -- Use function extensionality to show the equality
         dsimp,
         rw minus_zero at x,
         exact x.prop.elim,
@@ -1219,6 +1225,8 @@ section theorem_28
 
 end theorem_28
 
+#print axioms inductive_definitions_general -- TODO: can I avoid using classical or propext?
+
 variable AA : Type
 variable A : set AA
 variable f : AA -> mynat
@@ -1226,6 +1234,8 @@ variable f : AA -> mynat
 #check set.restrict
 #print Σ
 #check exists_unique
+
+#print axioms minus_zero
 
 /- #check exists_unique -/
 /- #check ∃! -/
