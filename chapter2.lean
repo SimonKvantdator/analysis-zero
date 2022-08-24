@@ -1195,8 +1195,10 @@ section theorem_28
     sorry,
   end
   
+  def B := (Σ n : mynat, minus n -> A) -- TODO: Was this the right definition of B?
+
   theorem inductive_definitions_general
-    (g : (Σ n : mynat, minus n -> A) -> A) :
+    (g : B -> A) :
     ∃! (f : mynat -> A),
       forall m : mynat,
         f m = g ⟨m, (minus m).restrict f⟩
